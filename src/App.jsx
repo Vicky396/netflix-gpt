@@ -1,12 +1,13 @@
 import './App.css'
+import Body from './components/Body.jsx'
+
 
 function App() {
   
 
   return (
-    <>
-      <div className='bg-yellow-400'>Vikash Singh</div>
-    </>
+   <Body/>
+    
   )
 }
 
