@@ -1,71 +1,85 @@
 import { useRef, useState } from "react";
 import Header from "./Header";
 import { validateForm } from "../utils/validateForm";
-import {  createUserWithEmailAndPassword ,signInWithEmailAndPassword} from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
 import { auth } from "../utils/firebase";
-import {useNavigate} from 'react-router-dom';
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
+import { BG_URL } from "../utils/constants";
 const Login = () => {
-  const navigate =useNavigate();
+  const dispatch = useDispatch();
   const [isSignInForm, setIsSignInForm] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const name = useRef(null);
   const email = useRef(null);
   const password = useRef(null);
+
   const toggleSignInForm = () => {
     setIsSignInForm(!isSignInForm);
   };
+
   const handleButtonClick = (e) => {
     e.preventDefault();
-    // console.log(email.current.value);
-    // console.log(password.current.value);
-    if(!isSignInForm){
-      
-      const message = validateForm(email.current.value, password.current.value);
-       setErrorMessage(message);
-    }
-    else{
-      const message = validateForm(email.current.value, password.current.value);
-       setErrorMessage(message);
-    }
-    console.log(errorMessage);
-    if(errorMessage) return;
+    const message = validateForm(email.current.value, password.current.value);
+    setErrorMessage(message);
+    if (message) return;
 
     //Signin/Signup
 
-    if(!isSignInForm){
+    if (!isSignInForm) {
       //Signup Logic
-      createUserWithEmailAndPassword(auth, email.current.value, password.current.value)
-  .then((userCredential) => {
-    // Signed up 
-    const user = userCredential.user;
-    console.log(user);
-     navigate("/browse");
-    // ...
-  })
-  .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    setErrorMessage(errorCode+" : "+errorMessage)
-    // ..
-  });
-
-    }
-    else{
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+    
+          updateProfile(user, {
+            displayName: name.current.value,
+          })
+            .then(() => {
+              const { uid, email, displayName } = auth.currentUser;
+              dispatch(
+                addUser({ uid: uid, email: email, displayName: displayName })
+              );
+              
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrorMessage(errorCode + " : " + errorMessage);
+          // ..
+        });
+    } else {
       //Signin Logic
-      signInWithEmailAndPassword(auth, email.current.value, password.current.value)
-  .then((userCredential) => {
-    // Signed in 
-    const user = userCredential.user;
-    console.log(user);
-     navigate("/browse");
-  })
-  .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    setErrorMessage(errorCode+" : "+errorMessage)
-  });
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+         
+          
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrorMessage(errorCode + " : " + errorMessage);
+        });
     }
-
   };
   return (
     <div className="relative h-screen w-full">
@@ -74,7 +88,7 @@ const Login = () => {
       {/* Background Image */}
       <img
         className="w-full h-screen object-cover"
-        src="https://assets.nflxext.com/ffe/siteui/vlv3/8200f588-2e93-4c95-8eab-ebba17821657/web/IN-en-20250616-TRIFECTA-perspective_9cbc87b2-d9bb-4fa8-9f8f-a4fe8fc72545_large.jpg"
+        src={BG_URL}
         alt="bg-image"
       />
 
@@ -118,7 +132,7 @@ const Login = () => {
         )}
 
         <p
-          className="w-full py-3 my-2 cursor-pointer"
+          className="w-full py-3 my-2 cursor-pointer hover:underline"
           onClick={toggleSignInForm}
         >
           {isSignInForm
